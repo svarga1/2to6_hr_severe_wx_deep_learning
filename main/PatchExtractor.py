@@ -3,7 +3,7 @@
 '''
 
 
-class PatchExtracter:
+class PatchExtractor():
     """Upscale X, Compute Time-Composites, Return 2D Patch of forecast fields
     
     Attributes:
