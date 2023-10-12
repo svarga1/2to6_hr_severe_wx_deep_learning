@@ -28,6 +28,7 @@ ml_config = { 'ENS_VARS':  ['uh_2to5_instant',
                             'hailcast',
                             'w_up',
                             'okubo_weiss',
+                            'ctt'
                     ],
              
               'ENV_VARS' : ['mid_level_lapse_rate', 
