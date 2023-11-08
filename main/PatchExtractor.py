@@ -32,12 +32,12 @@ from collections import ChainMap
 #Custom imports for target loading
 from wofs_ml_severe.data_pipeline.storm_report_loader import StormReportLoader
 from main.MRMSutils import MeshGrabber
-
+from wofs.plotting.util import decompose_file_path
 
 class PatchExtractor:
     """
     Turns a forecast into a 2D predictor field, then returns multiple patches.
-    Based heavily on the GridPointExtracter class.
+    Based heavily on the GridPointftracter class.
     --------------------------------------------------------------------------
     The PE does the following:
     1) Replaces NaNs with field average and Upscales the Field
@@ -53,7 +53,7 @@ class PatchExtractor:
     Class Methods:
     """
     
-    def __init__(self, ncfile, env_vars, strm_vars, n_patches, patch_shape,
+    def __init__(self, ncfile, ll_grid, env_vars, strm_vars, n_patches, patch_shape,
                 forecast_window='2to6',
                 target_sizes=[0.5, 2, 4], 
                 upscale_size=3, #Coarsens grid by 3x
@@ -118,7 +118,7 @@ class PatchExtractor:
         
         
         #Add MRMS Comp DZ at t0
-        dz = MeshGrabber(self._ncfile, self._upscale_size).load_comp_dz()
+        dz = MeshGrabber(self._ncfile, self._upscale_size, self._original_grid).load_comp_dz()
         upscaled_dz = {v : self.upscaler(dz, func=maximum_filter,
                             upscale_size=self._upscale_size, is_2d=True) for v in ['MRMS_DZ']}
         upscaled_dz=self.subset_patches([upscaled_dz], is_2D=True)[0]
@@ -365,23 +365,23 @@ class PatchExtractor:
         return out
     
     def extract_patches(self, data=None, gen_patches=True):
-        '''Selects and Extracts Patches - calls other patch methods'''
+        '''Selects and extracts Patches - calls other patch methods'''
         
         if gen_patches:
             #Check Compatibility of Requested Patches with Domain
-            ex.check_patches()
+            self.check_patches()
 
             #Select Patch Locations
-            ex.draw_patches()
+            self.draw_patches()
 
             #Get Domain Locations of Patches
-            ex.get_patch_centers()
+            self.get_patch_centers()
 
             #Map Patches onto Domain
-            ex.patch_to_grid()   
+            self.patch_to_grid()   
         
         #Compress X based on patch_grid
-        data_out = ex.subset_patches(data)
+        data_out = self.subset_patches(data)
        
         return data_out
 
@@ -420,7 +420,7 @@ class PatchExtractor:
         
         
         ##Add MESH and Upscale 
-        mesh = MeshGrabber(self._ncfile, self._upscale_size)() 
+        mesh = MeshGrabber(self._ncfile, self._upscale_size, self._original_grid)() 
         y.update({'MESH_severe': mesh[::self._upscale_size, ::self._upscale_size]}); keys.append('MESH_severe')
         
         #Force Binary Values

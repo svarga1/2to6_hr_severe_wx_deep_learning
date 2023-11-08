@@ -35,7 +35,7 @@ class MeshGrabber:
     MESHGrabber links WoFS ensemble storm tracks with MRMS MESH objects 
     """
    
-    def __init__(self, ncfile, size, mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' ):
+    def __init__(self, ncfile, size, grid_size = (300,300), mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' ):
         # Get the beginning of the 30-min period for the ENSEMBLETRACK file.
         self.init_path_date = ncfile.split('/')[4]
         self.size = size
@@ -45,10 +45,15 @@ class MeshGrabber:
         self.err_window = err_window
         self.forecast_window = forecast_window
         self.return_df = return_df
-        self.MRMS_PATHS = {'2019': '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2019/',
-              '2020' : '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2020/',
-              '2021' : '/work/brian.matilla/WOFS_2021/MRMS/RAD_AZS_MSH/',
-              '2022' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2022/',
+        self.MRMS_PATHS = {#'2019': '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2019/',
+              #'2020' : '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2020/',
+              #'2021' : '/work/brian.matilla/WOFS_2021/MRMS/RAD_AZS_MSH/',
+            '2018' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2018/',
+            '2019' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2019/',
+            '2020' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2020/',
+            '2021' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2021/',  
+            '2022' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2022/',
+            '2023' : '/work/rt_obs/MRMS/RAD_AZS_MSH/2023/',
              }
         
         
@@ -90,15 +95,22 @@ class MeshGrabber:
         files = self.find_mrms_files()
         
         # Load the file for the 30-min+ and concate along time dim. 
-        try:
-            mrms_ds = xr.concat([xr.load_dataset(f, drop_variables=['lat', 'lon']) 
-                     for f in files], dim='time') 
-        except:
-            print(f'Issues loading files: {files}')
-            return None
-        
+        if files:
+            try:
+                mrms_ds = xr.concat([xr.load_dataset(f, drop_variables=['lat', 'lon']) 
+                         for f in files], dim='time') 
+                out = mrms_ds['mesh_consv'].max(dim='time').values
+            except:
+                print(f'Issues loading files: {files}')
+                print('Default MESH Read-in failed, trying alternate method')
+                mrms_ds=[xr.load_dataset(f, drop_variables=['lat','lon'])['mesh_consv'].values for f in files]
+                out=np.max(mrms_ds, axis=0)
+        else:
+            #No mesh files-- return grid of -1
+            print('No MESH files, returning -1')
+            out = -1*np.ones_like(grid_size)
         # Compute the time-max MESH and return 
-        return mrms_ds['mesh_consv'].max(dim='time').values
+        return out
     
     def to_boolean_grid(self, mesh_grid):
        
@@ -124,7 +136,9 @@ class MeshGrabber:
         
         try:
             mrms_ds = xr.load_dataset(mrms_filepaths[0], drop_variables=['lat','lon'])
+            out = mrms_ds['dz_consv'].values
         except:
             print('Something Went Wrong Loading Composite Reflectivity')
+            out = -1*np.ones_like(grid_size)
                  
-        return mrms_ds['dz_consv'].values
+        return out
