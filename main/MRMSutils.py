@@ -35,10 +35,12 @@ class MeshGrabber:
     MESHGrabber links WoFS ensemble storm tracks with MRMS MESH objects 
     """
    
-    def __init__(self, ncfile, size, grid_size = (300,300), mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' ):
+    def __init__(self, ncfile, size, grid_size =np.zeros([300,300]), mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' ):
         # Get the beginning of the 30-min period for the ENSEMBLETRACK file.
         self.init_path_date = ncfile.split('/')[4]
         self.size = size
+        self.ncfile = ncfile
+        self.grid_size = grid_size
         self.mm_threshold=mm_threshold
         self.path_date = (pd.to_datetime(decompose_file_path(ncfile)['VALID_DATE']+decompose_file_path(ncfile)['INIT_TIME'])).strftime('%Y%m%d%H%M') #Path date (str) not including 2 hour desync
         self.path_date_dt = dt.datetime.strptime(self.path_date, '%Y%m%d%H%M')
@@ -108,7 +110,7 @@ class MeshGrabber:
         else:
             #No mesh files-- return grid of -1
             print('No MESH files, returning -1')
-            out = -1*np.ones_like(grid_size)
+            out = -1*np.ones_like(self.grid_size)
         # Compute the time-max MESH and return 
         return out
     
@@ -134,11 +136,16 @@ class MeshGrabber:
         mrms_filepaths = [Path(self.MRMS_PATHS[str(self.path_date_dt.year)]).joinpath(self.init_path_date, f) for f in mrms_filenames 
                   if Path(self.MRMS_PATHS[str(self.path_date_dt.year)]).joinpath(self.init_path_date, f).is_file()]
         
-        try:
-            mrms_ds = xr.load_dataset(mrms_filepaths[0], drop_variables=['lat','lon'])
-            out = mrms_ds['dz_consv'].values
-        except:
-            print('Something Went Wrong Loading Composite Reflectivity')
-            out = -1*np.ones_like(grid_size)
+        #try:
+        mrms_ds = xr.load_dataset(mrms_filepaths[0], drop_variables=['lat','lon'])
+        if int(self.ncfile.split('/')[4][:4]) >= 2023:
+            print('Using 2023 Naming Convention')
+            out_var='refl_consv'
+        else:
+            out_var = 'dz_consv'
+        out = mrms_ds[out_var].values
+        #except:
+        #    print('Something Went Wrong Loading Composite Reflectivity')
+        #    out = -1*np.ones_like(self.grid_size)
                  
         return out

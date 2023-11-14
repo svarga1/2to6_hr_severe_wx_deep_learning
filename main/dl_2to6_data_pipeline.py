@@ -5,7 +5,7 @@
 import sys
 from glob import glob
 from os.path import join
-
+import pandas as pd
 
 #Custom Packages
 sys.path.append('/home/samuel.varga/python_packages/WoF_post') #WoF post package
@@ -55,19 +55,26 @@ ml_config = { 'ENS_VARS':  ['uh_2to5_instant',
 
 def get_files(path, TIMESCALE):
     """Get the ENS, ENV, and SVR file paths for the 0-3 || 2-6 hr forecasts"""
+    if int(path.split('/')[4][:4]) >= 2021:
+        file_type = 'ALL'
+    else:
+        file_type= 'ENS'
+    
     # Load summary files between time step 00-36 || 24-72. 
     if TIMESCALE=='0to3':
-        ens_files = glob(join(path,'wofs_ENS_[0-3]*')) 
+        ens_files = glob(join(path,f'wofs_{file_type}_[0-3]*.nc')) 
         ens_files.sort()
         ens_files = ens_files[:37] #Drops the last 4 files, so we have 0-36
     elif TIMESCALE=='2to6':
-        ens_files = glob(join(path,'wofs_ENS_[2-7]*'))
+        ens_files = glob(join(path,f'wofs_{file_type}_[2-7]*.nc'))
         ens_files.sort()
         ens_files = ens_files[4:] #Drops the first 4 files, so we have 24-72 instead of 20-72
     
-    svr_files = [f.replace('ENS', 'SVR') for f in ens_files]
-    env_files = [f.replace('ENS', 'ENV') for f in ens_files]
-    
+    if file_type=='ALL':
+        return ens_files, ens_files, ens_files
+    else:
+        svr_files = [f.replace('ENS', 'SVR') for f in ens_files]
+        env_files = [f.replace('ENS', 'ENV') for f in ens_files]
     return ens_files, env_files, svr_files
 
 def load_dataset(path, TIMESCALE='2to6'):

@@ -118,7 +118,7 @@ class PatchExtractor:
         
         
         #Add MRMS Comp DZ at t0
-        dz = MeshGrabber(self._ncfile, self._upscale_size, self._original_grid).load_comp_dz()
+        dz = MeshGrabber(self._ncfile, self._upscale_size, np.zeros(np.shape(self._original_grid[0]))).load_comp_dz()
         upscaled_dz = {v : self.upscaler(dz, func=maximum_filter,
                             upscale_size=self._upscale_size, is_2d=True) for v in ['MRMS_DZ']}
         upscaled_dz=self.subset_patches([upscaled_dz], is_2D=True)[0]
@@ -420,7 +420,7 @@ class PatchExtractor:
         
         
         ##Add MESH and Upscale 
-        mesh = MeshGrabber(self._ncfile, self._upscale_size, self._original_grid)() 
+        mesh = MeshGrabber(self._ncfile, self._upscale_size, np.zeros(np.shape(self._original_grid[0])))() 
         y.update({'MESH_severe': mesh[::self._upscale_size, ::self._upscale_size]}); keys.append('MESH_severe')
         
         #Force Binary Values
