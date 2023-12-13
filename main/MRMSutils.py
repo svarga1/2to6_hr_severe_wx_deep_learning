@@ -35,7 +35,7 @@ class MeshGrabber:
     MESHGrabber links WoFS ensemble storm tracks with MRMS MESH objects 
     """
    
-    def __init__(self, ncfile, size, grid_size =np.zeros([300,300]), mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' ):
+    def __init__(self, ncfile, size, grid_size =np.zeros([300,300]), mm_threshold=30, err_window = 15, return_df=False, forecast_window='2to6' , n_ens=18):
         # Get the beginning of the 30-min period for the ENSEMBLETRACK file.
         self.init_path_date = ncfile.split('/')[4]
         self.size = size
@@ -47,6 +47,7 @@ class MeshGrabber:
         self.err_window = err_window
         self.forecast_window = forecast_window
         self.return_df = return_df
+        self.n_ens = n_ens
         self.MRMS_PATHS = {#'2019': '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2019/',
               #'2020' : '/work/brian.matilla/WoFS_2020/MRMS/RAD_AZS_MSH/2020/',
               #'2021' : '/work/brian.matilla/WOFS_2021/MRMS/RAD_AZS_MSH/',
@@ -103,10 +104,14 @@ class MeshGrabber:
                          for f in files], dim='time') 
                 out = mrms_ds['mesh_consv'].max(dim='time').values
             except:
-                print(f'Issues loading files: {files}')
-                print('Default MESH Read-in failed, trying alternate method')
-                mrms_ds=[xr.load_dataset(f, drop_variables=['lat','lon'])['mesh_consv'].values for f in files]
-                out=np.max(mrms_ds, axis=0)
+                try:
+                    print(f'Issues loading files: {files}')
+                    print('Default MESH Read-in failed, trying alternate method')
+                    mrms_ds=[xr.load_dataset(f, drop_variables=['lat','lon'])['mesh_consv'].values for f in files]
+                    out=np.max(mrms_ds, axis=0)
+                except:
+                    print('Alternate MESH Read-in failed, returning null values')
+                    out = -1*np.ones_like(self.grid_size)
         else:
             #No mesh files-- return grid of -1
             print('No MESH files, returning -1')
@@ -136,16 +141,16 @@ class MeshGrabber:
         mrms_filepaths = [Path(self.MRMS_PATHS[str(self.path_date_dt.year)]).joinpath(self.init_path_date, f) for f in mrms_filenames 
                   if Path(self.MRMS_PATHS[str(self.path_date_dt.year)]).joinpath(self.init_path_date, f).is_file()]
         
-        #try:
-        mrms_ds = xr.load_dataset(mrms_filepaths[0], drop_variables=['lat','lon'])
-        if int(self.ncfile.split('/')[4][:4]) >= 2023:
-            print('Using 2023 Naming Convention')
-            out_var='refl_consv'
-        else:
-            out_var = 'dz_consv'
-        out = mrms_ds[out_var].values
-        #except:
-        #    print('Something Went Wrong Loading Composite Reflectivity')
-        #    out = -1*np.ones_like(self.grid_size)
+        try:
+            mrms_ds = xr.load_dataset(mrms_filepaths[0], drop_variables=['lat','lon'])
+            if int(self.ncfile.split('/')[4][:4]) >= 2023:
+                print('Using 2023 Naming Convention')
+                out_var='refl_consv'
+            else:
+                out_var = 'dz_consv'
+            out = mrms_ds[out_var].values
+        except:
+            print('Something Went Wrong Loading Composite Reflectivity')
+            out = -1*np.ones_like(self.grid_size)
                  
         return out

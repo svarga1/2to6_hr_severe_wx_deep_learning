@@ -47,6 +47,11 @@ from main.PatchExtractor import PatchExtractor
 from wofs_ml_severe.common.emailer import Emailer
 from skexplain.common.multiprocessing_utils import run_parallel, to_iterator
 
+########
+##Main##
+########
+regen=True #If true, will regenerate the entire dataset. If false, will only create data for missing paths.
+
 #######
 ##I/O##
 #######
@@ -54,7 +59,7 @@ from skexplain.common.multiprocessing_utils import run_parallel, to_iterator
 out_path_base = f'/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/'
 input_path_base=f'/work/mflora/SummaryFiles'
 random_state_file=f'/work/samuel.varga/data/random_state.pkl'
-n_jobs=1
+n_jobs=2
 n_patches=10
 patches=(16,16)
 
@@ -70,7 +75,7 @@ dates=[d for d in os.listdir(input_path_base) if '.txt' not in d]
 paths=[] #Valid paths for worker function
 
 for d in dates:
-    if d[4:6] !='05': 
+    if d[4:6] !='05' or int(d[:4])<=2018: 
         continue
 
     times = [t for t in os.listdir(join(input_path_base, d)) if 'basemap' not in t] #Init time
@@ -79,18 +84,42 @@ for d in dates:
         path = join(input_path_base, d , t)
         
         if int(path.split('/')[4][:4]) >= 2021:
-            files = glob(join(path, f'wofs_ALL_[2-7]*'))
+            files = glob(join(path, f'wofs_ALL_[2-7]*.nc'))
         else:
-            files = glob(join(path, f'wofs_ENS_[2-7]*'))
-        all_nc_files = len([f for f in files if f.endswith('.nc')])
+            files = glob(join(path, f'wofs_ENS_[2-7]*.nc'))
+        #all_nc_files = len([f for f in files if f.endswith('.nc')])
 
-        if all_nc_files == len(files) and all_nc_files==53:
+        #if all_nc_files == len(files) and all_nc_files==53:
+        if len(files) ==53:
             #print(path)
             paths.append(path)
 
+print(paths)            
+print(len(paths))
+
+if regen:
+    #Make all files
+    pass
+else:
+    #Only make missing files
+    print(f'Total Paths: {len(paths)}')
+    existing_paths = [path.replace(input_path_base, join(out_path_base, f'SummaryFiles')) for path in paths]
+    existing_paths = [join(path, f'wofs_DL2TO6_16_16_data.feather') for path in existing_paths]
+    missing_paths=[]
+    for path in existing_paths:
+        if not exists(path):
+            missing_paths.append(path)
+            
+    print(f'Total Missing Paths to be regened: {len(missing_paths)}')
+    paths = [path.replace('wofs_DL2TO6_16_16_data.feather','') for path in missing_paths]
+    paths=[str(path.replace(join(out_path_base, f'SummaryFiles'),input_path_base))[:-1] for path in paths]
+
+    
+    
+
 print(f'Number of valid paths: {len(paths)}')
 emailer.send_email(f'Starting patch extraction', start_time)
-
+ 
 ################
 ##Random State##
 ################
