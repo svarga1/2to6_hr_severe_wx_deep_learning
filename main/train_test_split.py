@@ -142,7 +142,6 @@ print(f'Num Paths w/ usable data: {len(paths)}')
 #Convert remaining files into train/validation/test based on day
 temp_paths=[path.split('/')[-2][0:8]+path.split('/')[-1] for path in paths] #Different domains on the same day are treated as identical for the purposes of T/T split
 dates=[pd.to_datetime(path, format=f'%Y%m%d%H%M') for path in temp_paths]
-np.unique([date.strftime('%Y%m%d') for date in dates])
 
 #Split into train/test
 from sklearn.model_selection import KFold as kfold, train_test_split
@@ -165,7 +164,7 @@ with open(f'/work/samuel.varga/data/dates_split_deep_learning.pkl', 'wb') as dat
     
 #Save training folds:
 for i, (train_ind, val_ind) in enumerate(train_folds):
-    d = save_rotation_nc(i, train_ind, val_ind, train_dates, paths, dates)
+    save_rotation_nc(i, train_ind, val_ind, train_dates, paths, dates)
     
 #Save testing set
 testing_paths=list(np.array(paths)[np.isin(np.array([date.strftime('%Y%m%d') for date in dates]), test_dates)])
