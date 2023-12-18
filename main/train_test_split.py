@@ -83,26 +83,26 @@ def save_rotation_nc(rot_num, train_ind, val_ind, unique_dates, path_list, date_
     with open(f'/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/scaling/rot_{rot_num}_scaling.pkl', 'wb') as scale_file:
         pickle.dump({'mean':mean,'var':var}, scale_file)
     
-    ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__training_data'))
+    ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__training_data.nc'))
     ds.close()
     
     print(f'Saving metadata for Rot {rot_num}')
     meta_ds = [xr.open_dataset(f) for f in training_meta_paths]
     meta_ds = format_metadata(meta_ds)
-    meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__training_meta'))
+    meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__training_meta.nc'))
     meta_ds.close()
     
     #Create validation data
     print(f'Saving validation data for Rot {rot_num}')
     ds = [xr.open_dataset(f) for f in validation_file_paths]
     ds = xr.concat(ds, dim='patch_no')
-    ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__validation_data'))
+    ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__validation_data.nc'))
     ds.close()
     
     print(f'Saving metadata for Rot {rot_num}')
     meta_ds = [xr.open_dataset(f) for f in validation_meta_paths]
     meta_ds = format_metadata(meta_ds)
-    meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__validation_meta'))
+    meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__rot_{rot_num}__validation_meta.nc'))
     meta_ds.close()
                           
     return None
@@ -175,11 +175,11 @@ testing_meta_paths=[join(path, meta_file_base) for path in testing_paths]
 print(f'Saving testing data')
 ds = [xr.open_dataset(f) for f in testing_file_paths]
 ds = xr.concat(ds, dim='patch_no')
-ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__testing_data'))
+ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__testing_data.nc'))
 ds.close()
     
 print(f'Saving testing metadata')
 meta_ds = [xr.open_dataset(f) for f in testing_meta_paths]
 meta_ds = format_metadata(meta_ds)
-meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__testing_meta'))
+meta_ds.to_netcdf(join(out_path, f'wofs_dl_severe__2to6hr__testing_meta.nc'))
 meta_ds.close()

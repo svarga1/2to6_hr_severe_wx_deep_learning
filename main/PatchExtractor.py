@@ -92,14 +92,14 @@ class PatchExtractor:
     def make_dataset(self, X_env, X_strm, predict=False):
         '''Creates the dataset and extracts patches'''
         
-        #Apply a Mean filter to environmental fields to upscale them
+        #Apply a Mean filter to environmental fields and coarsen them
         X_env_upscaled = {v : self.upscaler(X_env[v], func=uniform_filter,
                         upscale_size=self._upscale_size) for v in self._env_vars}
 
         
     
         
-        #Apply a maximum filter to intrastorm fields to upscale them
+        #Apply a maximum filter to intrastorm fields and coarsen them
         X_strm_upscaled = {v : self.upscaler(X_strm[v], func=maximum_filter,
                             upscale_size=self._upscale_size) for v in self._strm_vars}
          
