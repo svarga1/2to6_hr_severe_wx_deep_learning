@@ -27,7 +27,7 @@ from wofs.post.utils import (
     save_dataset,
     load_multiple_nc_files,
 )
-from main.dl_2to6_data_pipeline import get_files, load_dataset
+from data_utils.dl_2to6_data_pipeline import get_files, load_dataset
 from collections import ChainMap
 
 #Get list of Patch files - convert cases to datetime

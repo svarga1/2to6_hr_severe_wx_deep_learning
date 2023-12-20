@@ -1,11 +1,9 @@
-##Script for use with hw7_base.py
 #Sam Varga
 import tensorflow as tf
 from tensorflow import keras
-from keras.layers import InputLayer, Dense, BatchNormalization, Dropout, Activation, Flatten, Conv2D, MaxPooling2D, GlobalMaxPool2D, SpatialDropout2D, Input, Embedding, Conv1D, MaxPooling1D, GlobalMaxPool1D, SpatialDropout1D, AveragePooling1D, SimpleRNN, GRU, concatenate
-from keras.layers.reshaping.up_sampling2d import UpSampling2D
+from keras.layers import InputLayer, Dense, BatchNormalization, Dropout, Activation, Flatten, Conv2D, MaxPooling2D, GlobalMaxPool2D, SpatialDropout2D, Input, Embedding, Conv1D, MaxPooling1D, GlobalMaxPool1D, SpatialDropout1D, AveragePooling1D, SimpleRNN, GRU, concatenate, UpSampling2D, Normalization
 
-def create_U_net_classifier_2D(image_size=(256,256), nchannels=26, n_classes=7, conv_layers=None,p_spatial_dropout=0.1, lrate=0.001, loss='sparse_categorical_crossentropy', metrics=[tf.keras.metrics.SparseCategoricalAccuracy], padding='same', activation_conv='relu', activation_out='softmax', clipvalue=None, skip=True ):
+def create_U_net_classifier_2D(image_size=(256,256), nchannels=26, n_classes=7, conv_layers=None,p_spatial_dropout=0.1, lrate=0.001, loss='sparse_categorical_crossentropy', metrics=[tf.keras.metrics.SparseCategoricalAccuracy], padding='same', activation_conv='relu', activation_out='softmax', clipvalue=None, skip=True, normalization=None ):
   '''Creates a U net classifier with skip connections for 2D Image classification'''
   '''Arguments:
   image_size-(width, height)- shape of images
@@ -19,17 +17,22 @@ def create_U_net_classifier_2D(image_size=(256,256), nchannels=26, n_classes=7, 
   activation_conv: activation nonlinearity for convolutional layers
   activation_out: activiation nonlinearity for output layer
   clipvalue: gradient clipping value
-  skip: add skip connections if true'''
+  skip: add skip connections if true
+  normalization: tuple - add standard scaling layer after input that scales by mean [0] and variance [1]'''
   
 
   reg=None #There are no dense layers, so we don't need L2 reg
 
   in_layer = Input(shape=(image_size[0],image_size[1],nchannels), name='Input') #Create input layer
+
+  if normalization:
+        main = Normalization(mean=normalization[0] , variance = normalization[1])(in_layer)
+
   skip_points=[] #List to use with skip connections
   
   for i, conv in enumerate(conv_layers): #Create the encoding portion of the network
     
-    main = Conv2D(conv['filters'], conv['kernel_size'], padding=padding, activation=activation_conv, name=f'Encode_{i}_0')(main if i!=0 else in_layer) #Connect to the input layer for the first time, then connect to the model
+    main = Conv2D(conv['filters'], conv['kernel_size'], padding=padding, activation=activation_conv, name=f'Encode_{i}_0')(main if i!=0 or normalization else in_layer) #Connect to the input layer for the first time, then connect to the model
     if p_spatial_dropout:
       main=SpatialDropout2D(p_spatial_dropout, name=f'En_Sp_Dr_{i}_0')(main)
     main = Conv2D(conv['filters'], conv['kernel_size'], padding=padding, activation=activation_conv,  name=f'Encode_{i}_1')(main) #Add 2 Conv2D layers with the same number of units, as proposed in Ronneberger, Fischer, and Brox's 2015 Paper
