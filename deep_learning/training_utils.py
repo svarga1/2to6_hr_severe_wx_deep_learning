@@ -44,11 +44,12 @@ def load_rotation(filepath, rotation, target_column, training=False, verbose=Fal
         return X, y, predictor_mean, predictor_variance
     else:
         return X, y
-def convert_to_tf(data_in, batch_size):
+def convert_to_tf(data_in, batch_size=None):
     '''For training/validation, data_in should be (X,y)'''
     import tensorflow as tf
     
     tf_data = tf.data.Dataset.from_tensor_slices(data_in)   
-    tf_data = tf_data.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    if batch_size:
+        tf_data = tf_data.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return tf_data    
