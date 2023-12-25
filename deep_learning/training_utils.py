@@ -29,8 +29,15 @@ def load_rotation(filepath, rotation, target_column, training=False, verbose=Fal
     y = np.stack([ds[v].values for v in ds.variables if 'severe' in v], axis=-1)
     
     #Select specified target variable
-    target_ind = np.argwhere(np.array([v for v in ds.variables if 'severe' in v])==target_column)[0][0]
-    y = y[:,:,:,target_ind]
+    if type(target_column) is str: #If only one column is requested
+        target_ind = np.argwhere(np.array([v for v in ds.variables if 'severe' in v])==target_column)[0][0]
+        y = y[:,:,:,target_ind]
+    elif type(target_column) is list:
+        y_dic = {}
+        for targ in target_column: #if a list of target columns is supplied, return a dictionary
+            target_ind = np.argwhere(np.array([v for v in ds.variables if 'severe' in v])==targ)[0][0]
+            y_dic[str(targ)] = y[:,:,:,target_ind]
+        y = y_dic
     
     #Debug
     if verbose:
@@ -53,3 +60,28 @@ def convert_to_tf(data_in, batch_size=None):
         tf_data = tf_data.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return tf_data    
+
+def resize_neural_net(model, new_input_shape):
+    from tensorflow import keras
+    from tensorflow.keras.layers import Activation
+    import sys
+    sys.path.insert(0, "/home/monte.flora/python_packages/wofs-super-resolution/dl4ds")
+    import dl4ds as dds
+    
+    # replace input shape of first layer -- causes error
+    model.layers[0]._batch_input_shape = new_input_shape
+    # rebuild model architecture by exporting and importing via json
+    new_model = keras.models.model_from_json(model.to_json())
+    #model.save("tmp.h5")
+    #new_model = keras.models.load_model("tmp.h5",
+    #                                custom_objects={"dssim_mse": dds.losses.dssim_mse,
+    #                                                "Activation": Activation("relu"),
+    #                                               })
+    #new_model.summary()
+    # copy weights from old model to new one
+    for layer in new_model.layers:
+        try:
+            layer.set_weights(model.get_layer(name=layer.name).get_weights())
+        except:
+            print("Could not transfer weights for layer {}".format(layer.name))
+    return new_model
