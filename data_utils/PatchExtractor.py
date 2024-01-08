@@ -400,7 +400,7 @@ class PatchExtractor:
         
         #(Down)load storm reports
         report = StormReportLoader(
-                reports_path = '/work/mflora/LSRS/StormEvents_2017-2022.csv',
+                reports_path = '/work/mflora/LSRS/STORM_EVENTS_2017-2023.csv',
                 report_type='NOAA',
                 initial_time=start_time, 
                 forecast_length=forecast_length, 

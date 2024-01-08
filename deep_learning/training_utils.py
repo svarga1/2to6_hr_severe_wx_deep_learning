@@ -4,6 +4,7 @@ import netCDF4
 import h5netcdf
 import xarray as xr
 import pickle
+from os.path import join
 
 def load_rotation(filepath, rotation, target_column, training=False, verbose=False):
     '''Loads the rotation file, reshapes to be (samples, y, x, channels), selects appropriate target variables,
@@ -85,3 +86,34 @@ def resize_neural_net(model, new_input_shape):
         except:
             print("Could not transfer weights for layer {}".format(layer.name))
     return new_model
+
+def save_results(args, u_net, history, train_ds, val_ds, test_ds, predict=False, outdir=None):
+    fbase = f"{args['target_column']}_Rot_{args['rotation']}_{args['shape'][0]}_{args['shape'][1]}_lrate_{args['lrate']}_spatial_dropout_{args['p_spatial_dropout']}_i_{args['i']}_filters_{args['filters']}_size_{args['size']}_pool_{args['pool']}_loss_{args['loss']}"
+    results = {}
+    results['args'] = args
+    if predict:
+        results['predict_val'] = u_net.predict(val_ds)
+        results['predict_train']=u_net.predict(train_ds)
+    results['predict_val_eval'] = u_net.evaluate(val_ds)
+
+    if test_ds is not None:
+        results['predict_test_eval']=u_net.evaluate(test_ds)
+        if predict:
+            results['predict_test']=u_net.predict(test_ds)
+            print(np.max(results['predict_test']))
+            print(np.mean(results['predict_test']))
+
+    results['predict_train_eval']=u_net.evaluate(train_ds)
+    results['history']=history.history
+    results['fname_base']=fbase
+
+    #Save results
+    with open(join(join(outdir, 'results'), f'{fbase}_results.pkl'),'wb') as fp:
+        pickle.dump(results, fp)
+
+    #save model
+    if False:
+        u_net.save(join(join(outdir, 'models'), f'{fbase}_model'))
+    
+    print(fbase)
+    return None

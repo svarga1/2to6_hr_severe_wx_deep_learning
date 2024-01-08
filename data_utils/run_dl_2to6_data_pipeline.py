@@ -60,7 +60,7 @@ out_path_base = f'/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/'
 input_path_base=f'/work/mflora/SummaryFiles'
 random_state_file=f'/work/samuel.varga/data/random_state.pkl'
 n_jobs=2
-n_patches=10
+n_patches=15
 patches=(16,16)
 
 #####################################################
