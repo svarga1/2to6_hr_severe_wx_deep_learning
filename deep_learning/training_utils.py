@@ -117,3 +117,36 @@ def save_results(args, u_net, history, train_ds, val_ds, test_ds, predict=False,
     
     print(fbase)
     return None
+
+def read_rotation_results(directory, filebase, n_rots):
+    '''Loads the results dictionaries for every rotation of a single model'''
+    """Directory: location of results dictionarys
+    filebase: filename including wildcard (*) in place of rotation number"""
+    import fnmatch
+    import os
+    import pickle
+    
+    #Get the separate rotation files for this HP combination
+    files = [filebase.split('Rot_')[0]+'Rot_'+str(i)+filebase.split('Rot_')[1][1:] for i in range(n_rots)]
+    
+    results = []
+    
+    #Load rotations
+    for f in files:
+        with open(join(directory, f), 'rb') as fp:
+            results.append(pickle.load(fp))
+    
+    return results
+
+def load_hp_opt_results(directory, combination_list, n_rots=5):
+    '''Loops through possible hyperparameter combinations, loads each rotations' results, and then computes average performance'''
+    """directory - directory where the results dictionarys are saved
+    combination_list - list of strings, where each string is a specific HP combination
+    n_rots - number of rotations"""
+    
+    results = {}
+    for combo in combination_list:
+        results[combo] = read_rotation_results(directory, combo, n_rots)
+        
+    return results
+    

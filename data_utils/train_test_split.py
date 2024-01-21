@@ -147,20 +147,29 @@ dates=[pd.to_datetime(path, format=f'%Y%m%d%H%M') for path in temp_paths]
 from sklearn.model_selection import KFold as kfold, train_test_split
 import random
 
-all_dates = np.unique([date.strftime('%Y%m%d') for date in dates])
-random.Random(42).shuffle(all_dates)
-train_dates, test_dates = train_test_split(all_dates, test_size=0.3)
-print('Training Dates:')
-print(train_dates)
 
-print('Testing Dates:')
-print(test_dates)
+if exists('/work/samuel.varga/data/dates_split_deep_learning.pkl'):
+    print('Using previous split')
+    with open(f'/work/samuel.varga/data/dates_split_deep_learning.pkl', 'rb') as date_file:
+        d = pickle.load(date_file)
+    train_dates, test_dates = d['train_dates'], d['test_dates']
+else:
+    all_dates = np.unique([date.strftime('%Y%m%d') for date in dates])
+    random.Random(42).shuffle(all_dates)
+    train_dates, test_dates = train_test_split(all_dates, test_size=0.3)
+    print('Training Dates:')
+    print(train_dates)
 
+    print('Testing Dates:')
+    print(test_dates)
+    
+    with open(f'/work/samuel.varga/data/dates_split_deep_learning.pkl', 'wb') as date_file:
+        pickle.dump({'train_dates':train_dates,'test_dates':test_dates}, date_file)
+
+
+        
 #Split training set into 5 folds
 train_folds = kfold(n_splits = 5, random_state=42, shuffle=True).split(train_dates)
-
-with open(f'/work/samuel.varga/data/dates_split_deep_learning.pkl', 'wb') as date_file:
-    pickle.dump({'train_dates':train_dates,'test_dates':test_dates}, date_file)
     
 #Save training folds:
 for i, (train_ind, val_ind) in enumerate(train_folds):

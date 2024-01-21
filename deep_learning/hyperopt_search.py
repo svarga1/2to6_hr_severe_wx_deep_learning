@@ -30,17 +30,17 @@ metrics=[tf.keras.metrics.SparseCategoricalAccuracy(), tf.keras.metrics.MeanSqua
          tf.keras.metrics.TruePositives(thresholds=thresholds)]
 
 #Load testing set
-X_test, y_test = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__testing_data'), None, target_column)
+X_test, y_test = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__testing_data.nc'), None, target_column)
 test_ds=convert_to_tf((X_test[None,:,:,:], np.expand_dims(y_test[None,:,:,:], axis=-1)))
 
 
 #Hyperparam search
 
-for rotation, p_s, lrate, cs, i, loss in product([1, 2 ,3, 4], [0.01, 0.1, 0.25], [0.0001, 0.001, 0.01, 0.1], ([2,1,2,1],[2,2,2,2],[2,3,2,3],[4,3,2,2]), (1,2,3,4), ['binary_crossentropy']):
+for rotation, p_s, lrate, cs, i, loss in product([0], [0.01, 0.1, 0.25], [0.0001, 0.001, 0.01, 0.1], ([2,1,2,1],[2,2,2,2],[2,3,2,3],[4,3,2,2]), (1,2,3,4), ['binary_crossentropy']):
     
     #Load Rotation and convert to tf dataset
-    X_train, y_train, mean, variance = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__rot_{rotation}__training_data'), rotation, target_column)
-    X_val, y_val = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__rot_{rotation}__validation_data'), rotation, target_column)
+    X_train, y_train, mean, variance = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__rot_{rotation}__training_data.nc'), rotation, target_column)
+    X_val, y_val = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__rot_{rotation}__validation_data.nc'), rotation, target_column)
     train_ds = convert_to_tf((X_train,np.expand_dims(y_train, axis=-1)), batch_size)
     val_ds = convert_to_tf((X_val,np.expand_dims(y_val, axis=-1)), batch_size)
     
