@@ -94,16 +94,16 @@ def save_results(args, u_net, history, train_ds, val_ds, test_ds, predict=False,
     if predict:
         results['predict_val'] = u_net.predict(val_ds)
         results['predict_train']=u_net.predict(train_ds)
-    results['predict_val_eval'] = u_net.evaluate(val_ds)
+    results['predict_val_eval'] = u_net.evaluate(val_ds, return_dict=True)
 
     if test_ds is not None:
-        results['predict_test_eval']=u_net.evaluate(test_ds)
+        results['predict_test_eval']=u_net.evaluate(test_ds, return_dict=True)
         if predict:
             results['predict_test']=u_net.predict(test_ds)
             print(np.max(results['predict_test']))
             print(np.mean(results['predict_test']))
 
-    results['predict_train_eval']=u_net.evaluate(train_ds)
+    results['predict_train_eval']=u_net.evaluate(train_ds, return_dict=True)
     results['history']=history.history
     results['fname_base']=fbase
 

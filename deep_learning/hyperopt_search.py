@@ -9,8 +9,10 @@ from tensorflow import keras
 import pickle
 from os.path import join
 sys.path.append('/home/samuel.varga/projects/deep_learning/')
+sys.path.append('/home/samuel.varga/python_packages/fronts/')
 from deep_learning.training_utils import load_rotation, convert_to_tf, resize_neural_net, save_results
 from deep_learning.deep_networks import create_U_net_classifier_2D
+from custom_losses import brier_skill_score_metric, critical_success_index_metric, fractions_skill_score_metric
 from keras import backend as K
 import gc
 from numba import cuda
@@ -25,9 +27,9 @@ target_column='any_severe__36km'
 thresholds=[.15]
 metrics=[tf.keras.metrics.SparseCategoricalAccuracy(), tf.keras.metrics.MeanSquaredError(name='Brier score'),
     tf.keras.metrics.AUC(name='auc'), tf.keras.metrics.AUC(name='prc', curve='PR'),     
-         tf.keras.metrics.FalseNegatives(thresholds=thresholds), tf.keras.metrics.FalsePositives(thresholds=thresholds),
-         tf.keras.metrics.MeanAbsoluteError(), tf.keras.metrics.TrueNegatives(thresholds=thresholds),
-         tf.keras.metrics.TruePositives(thresholds=thresholds)]
+         tf.keras.metrics.FalseNegatives(thresholds=thresholds, name='FN'), tf.keras.metrics.FalsePositives(thresholds=thresholds, name='FP'),
+         tf.keras.metrics.MeanAbsoluteError(name='MAE'), tf.keras.metrics.TrueNegatives(thresholds=thresholds, name='TN'),
+         tf.keras.metrics.TruePositives(thresholds=thresholds, name='TP'), brier_skill_score_metric(), critical_success_index_metric()]
 
 #Load testing set
 X_test, y_test = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__testing_data.nc'), None, target_column)
@@ -36,7 +38,7 @@ test_ds=convert_to_tf((X_test[None,:,:,:], np.expand_dims(y_test[None,:,:,:], ax
 
 #Hyperparam search
 
-for rotation, p_s, lrate, cs, i, loss in product([0], [0.01, 0.1, 0.25], [0.0001, 0.001, 0.01, 0.1], ([2,1,2,1],[2,2,2,2],[2,3,2,3],[4,3,2,2]), (1,2,3,4), ['binary_crossentropy']):
+for rotation, p_s, lrate, cs, i, loss in product([0,1,2,3,4], [0.01, 0.1, 0.25], [0.0001, 0.001, 0.01, 0.1], ([2,1,2,1],[2,2,2,2],[2,3,2,3],[4,3,2,2]), (1,2,3,4), ['binary_crossentropy']):
     
     #Load Rotation and convert to tf dataset
     X_train, y_train, mean, variance = load_rotation(join('/work/samuel.varga/data/2to6_hr_severe_wx/DEEP_LEARNING/',f'wofs_dl_severe__2to6hr__rot_{rotation}__training_data.nc'), rotation, target_column)
